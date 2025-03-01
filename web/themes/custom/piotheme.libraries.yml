@@ -13,7 +13,10 @@ global-styling:
     assets/third_party/bootstrap/js/bootstrap.bundle.js: {}
     assets/third_party/js/jquery.js: {}
     js/custom_js.js: {}
+    js/jquery.cycle.all.min.js: {}
+
   dependencies:
     - core/jquery
     - core/drupal
     - core/drupalSettings
+    - core/drupal.ajax

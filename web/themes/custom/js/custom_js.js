@@ -3,30 +3,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.querySelectorAll(".menu__item--has-children > a").forEach(function (menuLink) {
         menuLink.addEventListener("click", function (e) {
-            e.preventDefault(); // Prevent page jump
+            e.preventDefault(); // Stop page refresh
 
             let parentItem = this.parentElement;
 
             console.log("Clicked on:", this.textContent);
 
-            // Close all other open submenus
-            document.querySelectorAll(".menu__item--has-children").forEach(function (item) {
-                if (item !== parentItem) {
-                    item.classList.remove("active");
-                }
-            });
-
-            // Toggle the clicked submenu
-            parentItem.classList.toggle("active");
-            console.log("Active state:", parentItem.classList.contains("active"));
+            // Toggle submenu visibility
+            let submenu = parentItem.querySelector(".menu--level-2");
+            if (submenu) {
+                submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+            }
         });
     });
 
-    // Close menu if clicked outside
+    // Optional: Close submenu when clicking outside
     document.addEventListener("click", function (e) {
         if (!e.target.closest(".menu__item--has-children")) {
-            document.querySelectorAll(".menu__item--has-children").forEach(function (item) {
-                item.classList.remove("active");
+            document.querySelectorAll(".menu--level-2").forEach(function (submenu) {
+                submenu.style.display = "none";
             });
         }
     });
