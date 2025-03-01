@@ -3,16 +3,21 @@
 namespace Drupal\devel_generate\Plugin\DevelGenerate;
 
 use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\Config\Entity\ConfigEntityStorageInterface;
 use Drupal\Core\Datetime\DateFormatterInterface;
+use Drupal\Core\Entity\ContentEntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ExtensionPathResolver;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Routing\UrlGeneratorInterface;
+use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\devel_generate\DevelGenerateBase;
-use Drush\Utils\StringUtils;
+use Drupal\user\UserStorageInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -38,59 +43,43 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
 
   /**
    * The media entity storage.
-   *
-   * @var \Drupal\Core\Entity\ContentEntityStorageInterface
    */
-  protected $mediaStorage;
+  protected ContentEntityStorageInterface $mediaStorage;
 
   /**
    * The media type entity storage.
-   *
-   * @var \Drupal\Core\Config\Entity\ConfigEntityStorageInterface
    */
-  protected $mediaTypeStorage;
+  protected ConfigEntityStorageInterface $mediaTypeStorage;
 
   /**
    * The user entity storage.
-   *
-   * @var \Drupal\user\UserStorageInterface
    */
-  protected $userStorage;
-
-  /**
-   * The language manager service.
-   *
-   * @var \Drupal\Core\Language\LanguageManagerInterface
-   */
-  protected $languageManager;
+  protected UserStorageInterface $userStorage;
 
   /**
    * The url generator service.
-   *
-   * @var \Drupal\Core\Routing\UrlGeneratorInterface
    */
-  protected $urlGenerator;
+  protected UrlGeneratorInterface $urlGenerator;
 
   /**
    * The date formatter service.
-   *
-   * @var \Drupal\Core\Datetime\DateFormatterInterface
    */
-  protected $dateFormatter;
+  protected DateFormatterInterface $dateFormatter;
 
   /**
    * The system time service.
-   *
-   * @var \Drupal\Component\Datetime\TimeInterface
    */
-  protected $time;
+  protected TimeInterface $time;
+
+  /**
+   * The extension path resolver service.
+   */
+  protected ExtensionPathResolver $extensionPathResolver;
 
   /**
    * The Drush batch flag.
-   *
-   * @var bool
    */
-  protected $drushBatch;
+  protected bool $drushBatch = FALSE;
 
   /**
    * Constructs a new 'media' plugin instance.
@@ -103,51 +92,87 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
    *   The plugin definition.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager service.
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+   *   The messenger.
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
-   *   The language manager service.
+   *   The language manager.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The module handler.
+   * @param \Drupal\Core\StringTranslation\TranslationInterface $string_translation
+   *   The translation manager.
+   * @param \Drupal\Core\Entity\ContentEntityStorageInterface $media_storage
+   *   The media type entity storage.
+   * @param \Drupal\Core\Config\Entity\ConfigEntityStorageInterface $media_type_storage
+   *   The media type entity storage.
+   * @param \Drupal\user\UserStorageInterface $user_storage
+   *   The user storage.
    * @param \Drupal\Core\Routing\UrlGeneratorInterface $url_generator
    *   The url generator service.
    * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
    *   The date formatter service.
    * @param \Drupal\Component\Datetime\TimeInterface $time
    *   The time service.
+   * @param \Drupal\Core\Extension\ExtensionPathResolver $extension_path_resolver
+   *   The extension path resolver service.
    *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    *   Thrown if the storage handler couldn't be loaded.
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    *   Thrown if the entity type doesn't exist.
    */
-  public function __construct(array $configuration, $plugin_id, array $plugin_definition, EntityTypeManagerInterface $entity_type_manager, LanguageManagerInterface $language_manager, UrlGeneratorInterface $url_generator, DateFormatterInterface $date_formatter, TimeInterface $time) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
-
-    $this->mediaStorage = $entity_type_manager->getStorage('media');
-    $this->mediaTypeStorage = $entity_type_manager->getStorage('media_type');
-    $this->userStorage = $entity_type_manager->getStorage('user');
-    ;
-    $this->languageManager = $language_manager;
+  public function __construct(
+    array $configuration,
+    $plugin_id,
+    array $plugin_definition,
+    EntityTypeManagerInterface $entity_type_manager,
+    MessengerInterface $messenger,
+    LanguageManagerInterface $language_manager,
+    ModuleHandlerInterface $module_handler,
+    TranslationInterface $string_translation,
+    ContentEntityStorageInterface $media_storage,
+    ConfigEntityStorageInterface $media_type_storage,
+    UserStorageInterface $user_storage,
+    UrlGeneratorInterface $url_generator,
+    DateFormatterInterface $date_formatter,
+    TimeInterface $time,
+    ExtensionPathResolver $extension_path_resolver
+  ) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_type_manager, $messenger, $language_manager, $module_handler, $string_translation);
+    $this->mediaStorage = $media_storage;
+    $this->mediaTypeStorage = $media_type_storage;
+    $this->userStorage = $user_storage;
     $this->urlGenerator = $url_generator;
     $this->dateFormatter = $date_formatter;
     $this->time = $time;
+    $this->extensionPathResolver = $extension_path_resolver;
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
+    $entity_type_manager = $container->get('entity_type.manager');
     return new static(
       $configuration, $plugin_id, $plugin_definition,
-      $container->get('entity_type.manager'),
+      $entity_type_manager,
+      $container->get('messenger'),
       $container->get('language_manager'),
+      $container->get('module_handler'),
+      $container->get('string_translation'),
+      $entity_type_manager->getStorage('media'),
+      $entity_type_manager->getStorage('media_type'),
+      $entity_type_manager->getStorage('user'),
       $container->get('url_generator'),
       $container->get('date.formatter'),
-      $container->get('datetime.time')
+      $container->get('datetime.time'),
+      $container->get('extension.path.resolver')
     );
   }
 
   /**
    * {@inheritdoc}
    */
-  public function settingsForm(array $form, FormStateInterface $form_state) {
+  public function settingsForm(array $form, FormStateInterface $form_state): array {
     $types = $this->mediaTypeStorage->loadMultiple();
 
     if (empty($types)) {
@@ -203,6 +228,19 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
       '#max' => 255,
     ];
 
+    $form['skip_fields'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Fields to leave empty'),
+      '#description' => $this->t('Enter the field names as a comma-separated list. These will be skipped and have a default value in the generated content.'),
+      '#default_value' => NULL,
+    ];
+    $form['base_fields'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Base fields to populate'),
+      '#description' => $this->t('Enter the field names as a comma-separated list. These will be populated.'),
+      '#default_value' => NULL,
+    ];
+
     $options = [];
     // We always need a language.
     $languages = $this->languageManager->getLanguages(LanguageInterface::STATE_ALL);
@@ -229,7 +267,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
   /**
    * {@inheritdoc}
    */
-  public function settingsFormValidate(array $form, FormStateInterface $form_state) {
+  public function settingsFormValidate(array $form, FormStateInterface $form_state): void {
     // Remove the media types not selected.
     $media_types = array_filter($form_state->getValue('media_types'));
     if (!$media_types) {
@@ -237,12 +275,17 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
     }
     // Store the normalized value back, in form state.
     $form_state->setValue('media_types', array_combine($media_types, $media_types));
+
+    $skip_fields = is_null($form_state->getValue('skip_fields')) ? [] : self::csvToArray($form_state->getValue('skip_fields'));
+    $base_fields = is_null($form_state->getValue('base_fields')) ? [] : self::csvToArray($form_state->getValue('base_fields'));
+    $form_state->setValue('skip_fields', $skip_fields);
+    $form_state->setValue('base_fields', $base_fields);
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function generateElements(array $values) {
+  protected function generateElements(array $values): void {
     if ($this->isBatch($values['num'])) {
       $this->generateBatchMedia($values);
     }
@@ -264,7 +307,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
    * @throws \Drupal\Core\Entity\EntityStorageException
    *   Thrown if the bundle does not exist or was needed but not specified.
    */
-  protected function generateMedia(array $values) {
+  protected function generateMedia(array $values): void {
     if (!empty($values['kill']) && $values['media_types']) {
       $this->mediaKill($values);
     }
@@ -277,7 +320,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
         $this->createMediaItem($values);
         if (isset($values['feedback']) && $i % $values['feedback'] == 0) {
           $now = time();
-          $this->messenger()->addStatus(dt('Completed !feedback media items (!rate media/min)', [
+          $this->messenger->addStatus(dt('Completed !feedback media items (!rate media/min)', [
             '!feedback' => $values['feedback'],
             '!rate' => ($values['feedback'] * 60) / ($now - $start),
           ]));
@@ -294,7 +337,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
    * @param array $values
    *   The input values from the settings form.
    */
-  protected function generateBatchMedia(array $values) {
+  protected function generateBatchMedia(array $values): void {
     $operations = [];
 
     // Setup the batch operations and save the variables.
@@ -324,7 +367,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
       'title' => $this->t('Generating media items'),
       'operations' => $operations,
       'finished' => 'devel_generate_batch_finished',
-      'file' => \Drupal::service('extension.path.resolver')->getPath('module', 'devel_generate') . '/devel_generate.batch.inc',
+      'file' => $this->extensionPathResolver->getPath('module', 'devel_generate') . '/devel_generate.batch.inc',
     ];
     batch_set($batch);
 
@@ -343,7 +386,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
    *
    * @see self::preGenerate()
    */
-  public function batchPreGenerate(array $vars, iterable &$context) {
+  public function batchPreGenerate(array $vars, iterable &$context): void {
     $context['results'] = $vars;
     $context['results']['num'] = 0;
     $this->preGenerate($context['results']);
@@ -366,12 +409,15 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
    *
    * @see self::createMediaItem()
    */
-  public function batchCreateMediaItem(array $vars, iterable &$context) {
+  public function batchCreateMediaItem(array $vars, iterable &$context): void {
     if ($this->drushBatch) {
       $this->createMediaItem($vars);
     }
     else {
       $this->createMediaItem($context['results']);
+    }
+    if (!isset($context['results']['num'])) {
+      $context['results']['num'] = 0;
     }
     $context['results']['num']++;
   }
@@ -386,7 +432,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
    *
    * @see self::mediaKill()
    */
-  public function batchMediaKill(array $vars, iterable &$context) {
+  public function batchMediaKill(array $vars, iterable &$context): void {
     if ($this->drushBatch) {
       $this->mediaKill($vars);
     }
@@ -398,7 +444,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
   /**
    * {@inheritdoc}
    */
-  public function validateDrushParams(array $args, array $options = []) {
+  public function validateDrushParams(array $args, array $options = []): array {
     $add_language = $options['languages'];
     if (!empty($add_language)) {
       $add_language = explode(',', str_replace(' ', '', $add_language));
@@ -412,8 +458,11 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
     $values['name_length'] = 6;
     $values['num'] = array_shift($args);
 
+    $values['skip_fields'] = is_null($options['skip-fields']) ? [] : self::csvToArray($options['skip-fields']);
+    $values['base_fields'] = is_null($options['base-fields']) ? [] : self::csvToArray($options['base-fields']);
+
     $all_media_types = array_values($this->mediaTypeStorage->getQuery()->accessCheck(FALSE)->execute());
-    $requested_media_types = StringUtils::csvToArray($options['media-types'] ?: $all_media_types);
+    $requested_media_types = self::csvToArray($options['media-types'] ?: $all_media_types);
 
     if (empty($requested_media_types)) {
       throw new \Exception(dt('No media types available'));
@@ -442,7 +491,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
    * @throws \Drupal\Core\Entity\EntityStorageException
    *   Thrown if the media type does not exist.
    */
-  protected function mediaKill(array $values) {
+  protected function mediaKill(array $values): void {
     $mids = $this->mediaStorage->getQuery()
       ->condition('bundle', $values['media_types'], 'IN')
       ->accessCheck(FALSE)
@@ -464,7 +513,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
    * @param array $results
    *   The input values from the settings form.
    */
-  protected function preGenerate(array &$results) {
+  protected function preGenerate(array &$results): void {
     // Get user id.
     $users = array_values($this->userStorage->getQuery()
       ->range(0, 50)
@@ -487,7 +536,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
    * @throws \Drupal\Core\Entity\EntityStorageException
    *   Thrown if the bundle does not exist or was needed but not specified.
    */
-  protected function createMediaItem(array &$results) {
+  protected function createMediaItem(array &$results): void {
     if (!isset($results['time_range'])) {
       $results['time_range'] = 0;
     }
@@ -509,8 +558,13 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
     // A flag to let hook implementations know that this is a generated item.
     $media->devel_generate = $results;
 
-    // Populate all fields with sample values.
-    $this->populateFields($media);
+    // Populate all non-skipped fields with sample values.
+    $this->populateFields($media, $results['skip_fields'], $results['base_fields']);
+
+    // Remove the fields which are intended to have no value.
+    foreach ($results['skip_fields'] as $field) {
+      unset($media->$field);
+    }
 
     $media->save();
   }
@@ -524,7 +578,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
    * @return string
    *   The language code.
    */
-  protected function getLangcode(array $results) {
+  protected function getLangcode(array $results): string {
     if (isset($results['add_language'])) {
       $langcodes = $results['add_language'];
       $langcode = $langcodes[array_rand($langcodes)];
@@ -544,7 +598,7 @@ class MediaDevelGenerate extends DevelGenerateBase implements ContainerFactoryPl
    * @return bool
    *   If the process should be a batch process.
    */
-  protected function isBatch($media_items_count) {
+  protected function isBatch(int $media_items_count): bool {
     return $media_items_count >= 50;
   }
 

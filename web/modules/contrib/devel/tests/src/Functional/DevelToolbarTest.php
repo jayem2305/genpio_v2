@@ -14,7 +14,7 @@ class DevelToolbarTest extends DevelBrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['devel', 'toolbar', 'block'];
+  protected static $modules = ['devel', 'toolbar', 'block'];
 
   /**
    * The user for tests.
@@ -58,16 +58,18 @@ class DevelToolbarTest extends DevelBrowserTestBase {
       'administer site configuration',
       'access devel information',
       'access toolbar',
+      'switch users',
     ]);
     $this->toolbarUser = $this->drupalCreateUser([
       'access toolbar',
+      'switch users',
     ]);
   }
 
   /**
    * Tests configuration form.
    */
-  public function testConfigurationForm() {
+  public function testConfigurationForm(): void {
     // Ensures that the page is accessible only to users with the adequate
     // permissions.
     $this->drupalGet('admin/config/development/devel/toolbar');
@@ -114,7 +116,7 @@ class DevelToolbarTest extends DevelBrowserTestBase {
   /**
    * Tests cache metadata headers.
    */
-  public function testCacheHeaders() {
+  public function testCacheHeaders(): void {
     // Disable user toolbar tab so we can test properly if the devel toolbar
     // implementation interferes with the page cacheability.
     \Drupal::service('module_installer')->install(['toolbar_disable_user_toolbar']);
@@ -145,7 +147,7 @@ class DevelToolbarTest extends DevelBrowserTestBase {
   /**
    * Tests toolbar integration.
    */
-  public function testToolbarIntegration() {
+  public function testToolbarIntegration(): void {
     $library_css_url = 'css/devel.toolbar.css';
     $toolbar_selector = '#toolbar-bar .toolbar-tab';
     $toolbar_tab_selector = '#toolbar-bar .toolbar-tab a.toolbar-icon-devel';
@@ -222,7 +224,7 @@ class DevelToolbarTest extends DevelBrowserTestBase {
   /**
    * Tests devel when toolbar module is not installed.
    */
-  public function testToolbarModuleNotInstalled() {
+  public function testToolbarModuleNotInstalled(): void {
     // Ensures that when toolbar module is not installed all works properly.
     \Drupal::service('module_installer')->uninstall(['toolbar']);
 

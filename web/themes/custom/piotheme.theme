@@ -1,0 +1,13 @@
+<?php
+function piotheme_preprocess_page(&$variables) {
+  $variables['#attached']['library'][] = 'gen_pio_theme/global-styling';
+}
+
+function piotheme_preprocess_field(&$variables) {
+  if (isset($variables['label_display']) && $variables['label_display'] == 'above') {
+    $variables['label_display'] = 'hidden';
+  }
+}
+
+
+?>

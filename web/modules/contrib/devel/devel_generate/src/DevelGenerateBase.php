@@ -4,11 +4,17 @@ namespace Drupal\devel_generate;
 
 use Drupal\Component\Utility\Random;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Plugin\PluginBase;
+use Drupal\Core\StringTranslation\TranslationInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Provides a base DevelGenerate plugin implementation.
@@ -17,29 +23,89 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
 
   /**
    * The plugin settings.
-   *
-   * @var array
    */
-  protected $settings = [];
+  protected array $settings = [];
 
   /**
    * The random data generator.
-   *
-   * @var \Drupal\Component\Utility\Random
    */
-  protected $random;
+  protected ?Random $random = NULL;
 
   /**
    * The entity type manager service.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
+
+  /**
+   * The messenger.
+   *
+   * @var \Drupal\Core\Messenger\MessengerInterface
+   */
+  protected $messenger;
+
+  /**
+   * The language manager.
+   */
+  protected LanguageManagerInterface $languageManager;
+
+  /**
+   * The module handler.
+   */
+  protected ModuleHandlerInterface $moduleHandler;
+
+  /**
+   * Constructs a new DevelGenerateBase object.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin ID for the plugin instance.
+   * @param array $plugin_definition
+   *   The plugin definition.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager service.
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+   *   The messenger.
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   *   The language manager.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The module handler.
+   * @param \Drupal\Core\StringTranslation\TranslationInterface $string_translation
+   *   The translation manager.
+   */
+  public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
+    EntityTypeManagerInterface $entity_type_manager,
+    MessengerInterface $messenger,
+    LanguageManagerInterface $language_manager,
+    ModuleHandlerInterface $module_handler,
+    TranslationInterface $string_translation
+  ) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->entityTypeManager = $entity_type_manager;
+    $this->messenger = $messenger;
+    $this->languageManager = $language_manager;
+    $this->moduleHandler = $module_handler;
+    $this->stringTranslation = $string_translation;
+  }
+
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration, $plugin_id, $plugin_definition,
+      $container->get('entity_type.manager'),
+      $container->get('messenger'),
+      $container->get('language_manager'),
+      $container->get('module_handler'),
+      $container->get('string_translation'),
+    );
+  }
 
   /**
    * {@inheritdoc}
    */
-  public function getSetting($key) {
+  public function getSetting(string $key) {
     // Merge defaults if we have no value for the key.
     if (!array_key_exists($key, $this->settings)) {
       $this->settings = $this->getDefaultSettings();
@@ -50,7 +116,7 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
   /**
    * {@inheritdoc}
    */
-  public function getDefaultSettings() {
+  public function getDefaultSettings(): array {
     $definition = $this->getPluginDefinition();
     return $definition['settings'];
   }
@@ -58,28 +124,28 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
   /**
    * {@inheritdoc}
    */
-  public function getSettings() {
+  public function getSettings(): array {
     return $this->settings;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function settingsForm(array $form, FormStateInterface $form_state) {
+  public function settingsForm(array $form, FormStateInterface $form_state): array {
     return [];
   }
 
   /**
    * {@inheritdoc}
    */
-  public function settingsFormValidate(array $form, FormStateInterface $form_state) {
+  public function settingsFormValidate(array $form, FormStateInterface $form_state): void {
     // Validation is optional.
   }
 
   /**
    * {@inheritdoc}
    */
-  public function generate(array $values) {
+  public function generate(array $values): void {
     $this->generateElements($values);
     $this->setMessage('Generate process complete.');
   }
@@ -90,7 +156,7 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
    * @param array $values
    *   The input values from the settings form.
    */
-  protected function generateElements(array $values) {
+  protected function generateElements(array $values): void {
 
   }
 
@@ -99,27 +165,33 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity to be enriched with sample field values.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @param array $skip
+   *   A list of field names to avoid when populating.
+   * @param array $base
+   *   A list of base field names to populate.
    */
-  public static function populateFields(EntityInterface $entity) {
-    $properties = [
-      'entity_type' => $entity->getEntityType()->id(),
-      'bundle' => $entity->bundle(),
-    ];
-    $field_config_storage = \Drupal::entityTypeManager()->getStorage('field_config');
-    /** @var \Drupal\field\FieldConfigInterface[] $instances */
-    $instances = $field_config_storage->loadByProperties($properties);
+  public static function populateFields(EntityInterface $entity, array $skip = [], array $base = []): void {
+    if (!$entity->getEntityType()->entityClassImplements(FieldableEntityInterface::class)) {
+      // Nothing to do.
+      return;
+    }
+
+    /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $instances */
+    $instances = \Drupal::service('entity_field.manager')->getFieldDefinitions($entity->getEntityTypeId(), $entity->bundle());
+    $instances = array_diff_key($instances, array_flip($skip));
 
     foreach ($instances as $instance) {
       $field_storage = $instance->getFieldStorageDefinition();
+      $field_name = $field_storage->getName();
+      if ($field_storage->isBaseField() && !in_array($field_name, $base)) {
+        // Skip base field unless specifically requested.
+        continue;
+      }
       $max = $cardinality = $field_storage->getCardinality();
       if ($cardinality == FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED) {
         // Just an arbitrary number for 'unlimited'.
-        $max = rand(1, 3);
+        $max = random_int(1, 3);
       }
-      $field_name = $field_storage->getName();
       $entity->$field_name->generateSampleItems($max);
     }
   }
@@ -134,19 +206,19 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
   /**
    * Set a message for either drush or the web interface.
    *
-   * @param string $msg
+   * @param string|MarkupInterface $msg
    *   The message to display.
    * @param string $type
    *   (optional) The message type, as defined in MessengerInterface. Defaults
    *   to MessengerInterface::TYPE_STATUS.
    */
-  protected function setMessage($msg, $type = MessengerInterface::TYPE_STATUS) {
+  protected function setMessage($msg, string $type = MessengerInterface::TYPE_STATUS): void {
     if (function_exists('drush_log')) {
       $msg = strip_tags($msg);
       drush_log($msg);
     }
     else {
-      \Drupal::messenger()->addMessage($msg, $type);
+      $this->messenger->addMessage($msg, $type);
     }
   }
 
@@ -159,7 +231,7 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
    * @return bool
    *   TRUE if the parameter is a number, FALSE otherwise.
    */
-  public static function isNumber($number) {
+  public static function isNumber(mixed $number): bool {
     if ($number == NULL) {
       return FALSE;
     }
@@ -170,25 +242,12 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
   }
 
   /**
-   * Gets the entity type manager service.
-   *
-   * @return \Drupal\Core\Entity\EntityTypeManagerInterface
-   *   The entity type manager service.
-   */
-  protected function getEntityTypeManager() {
-    if (!$this->entityTypeManager) {
-      $this->entityTypeManager = \Drupal::entityTypeManager();
-    }
-    return $this->entityTypeManager;
-  }
-
-  /**
    * Returns the random data generator.
    *
    * @return \Drupal\Component\Utility\Random
    *   The random data generator.
    */
-  protected function getRandom() {
+  protected function getRandom(): Random {
     if (!$this->random) {
       $this->random = new Random();
     }
@@ -209,7 +268,7 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
    * @return string
    *   A sentence of the required length.
    */
-  protected function randomSentenceOfLength($sentence_length, $max_word_length = 8) {
+  protected function randomSentenceOfLength(int $sentence_length, int $max_word_length = 8): string {
     // Maximum word length cannot be longer than the sentence length.
     $max_word_length = min($sentence_length, $max_word_length);
     $words = [];
@@ -227,8 +286,7 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
       $words[] = $this->getRandom()->word($next_word);
       $remainder = $remainder - $next_word - 1;
     } while ($remainder > 0);
-    $sentence = ucfirst(implode(' ', $words));
-    return $sentence;
+    return ucfirst(implode(' ', $words));
   }
 
   /**
@@ -242,7 +300,7 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
    * @return array
    *   The language details section of the form.
    */
-  protected function getLanguageForm($items) {
+  protected function getLanguageForm(string $items): array {
     // We always need a language, even if the language module is not installed.
     $options = [];
     $languages = $this->languageManager->getLanguages(LanguageInterface::STATE_CONFIGURABLE);
@@ -290,11 +348,36 @@ abstract class DevelGenerateBase extends PluginBase implements DevelGenerateBase
    * @return string
    *   The language code to use.
    */
-  protected function getLangcode(array $add_language) {
+  protected function getLangcode(array $add_language): string {
     if (empty($add_language)) {
       return $this->languageManager->getDefaultLanguage()->getId();
     }
     return $add_language[array_rand($add_language)];
+  }
+
+  /**
+   * Convert a csv string into an array of items.
+   *
+   * Borrowed from Drush.
+   *
+   * @param string|array|null $args
+   *   A simple csv string; e.g. 'a,b,c'
+   *   or a simple list of items; e.g. array('a','b','c')
+   *   or some combination; e.g. array('a,b','c') or array('a,','b,','c,').
+   */
+  public static function csvToArray($args): array {
+    if ($args === NULL) {
+      return [];
+    }
+
+    // 1: implode(',',$args) converts from array('a,','b,','c,') to 'a,,b,,c,'
+    // 2: explode(',', ...) converts to array('a','','b','','c','')
+    // 3: array_filter(...) removes the empty items
+    // 4: array_map(...) trims extra whitespace from each item
+    // (handles csv strings with extra whitespace, e.g. 'a, b, c')
+    //
+    $args = is_array($args) ? implode(',', array_map('strval', $args)) : (string) $args;
+    return array_map('trim', array_filter(explode(',', $args)));
   }
 
 }

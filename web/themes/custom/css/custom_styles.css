@@ -730,6 +730,11 @@ section {
   background: transparent;
   margin-bottom: 25px;
 }
+.footer-section .list-group .list-group-item a {
+    text-decoration: none;
+    color: #fff;
+    letter-spacing: 1px;
+}
 .footer-section .list-group .list-group-item {
   background: transparent;
   border: 0;
@@ -737,9 +742,9 @@ section {
   color: #fff;
 }
 .footer-section .list-group .list-group-item a {
-  text-decoration: none;
-  color: #fff;
-  letter-spacing: 1px;
+    text-decoration: none;
+    color: #fff;
+    letter-spacing: 1px;
 }
 .footer-section .list-group .list-group-item a:hover {
   color: var(--secondary-color);
