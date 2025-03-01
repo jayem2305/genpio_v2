@@ -1,0 +1,111 @@
+.nav-ct {
+    display: block;
+    text-align: center;
+}
+.navbar {
+    all: unset; /* Resets Bootstrap navbar */
+}
+
+.nav-ct .menu {
+    z-index: 2;
+    background-color: var(--secondary-color) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    font-family: var(--link-fonts) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    padding: 20px 0 !important;
+    width: 100%;
+    max-width: 1400px; /* Adjust if needed */
+    height: 80px; /* Adjust height */
+    margin: 0 auto;
+    background-color: yellow !important;
+}
+.nav-ct .menu__item {
+    list-style: none;
+    display: inline-block;
+    margin: 0 10px !important; /* Adjust spacing */
+    padding: 0 !important;
+}
+
+.nav-ct .menu__link {
+    color: rgba(0, 0, 0, 0.67) !important;
+    padding: 1rem !important;
+    font-size: 15px !important;
+    text-decoration: none !important;
+    transition: 0.2s ease !important;
+}
+
+.nav-ct .menu__link:hover,
+.nav-ct .menu__link:focus,
+.nav-ct .menu__link.is-active {
+    color: var(--primary-color) !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    border-bottom: 5px solid var(--primary-color) !important;
+}
+
+/* Dropdown menu */
+.menu__item--has-children {
+    position: relative;
+}
+
+/* Ensure the submenu is hidden by default */
+.menu--level-2 {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background-color: yellow;
+    padding: 10px;
+    min-width: 200px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    text-align: left;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* Show submenu when active */
+.menu__item--has-children.active > .menu--level-2 {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Style submenu items */
+.menu--level-2 .menu__item {
+    display: block;
+    padding: 8px 15px;
+    text-align: left;
+}
+
+/* Make sure the submenu links look good */
+.menu--level-2 .menu__link {
+    color: black !important;
+    text-decoration: none;
+    display: block;
+}
+
+/* Style the small arrow indicator */
+.menu__item--has-children > a::after {
+    content: " ▼"; /* Dropdown indicator */
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+/* Responsive Styles */
+@media only screen and (max-width: 992px) {
+    .nav-ct .menu {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+    .menu--level-2 {
+        position: static;
+        display: none;
+        width: 100%;
+    }
+    .menu__item--has-children.active > .menu--level-2 {
+        display: block;
+    }
+}
