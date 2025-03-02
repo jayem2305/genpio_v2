@@ -103,18 +103,41 @@
     margin-left: 5px;
 }
 
-/* Responsive Styles */
 @media only screen and (max-width: 992px) {
     .nav-ct .menu {
         flex-direction: column !important;
         align-items: center !important;
+        background-color: white !important; /* Change to match your theme */
     }
-    .menu--level-2 {
-        position: static;
-        display: none;
-        width: 100%;
-    }
-    .menu__item--has-children.active > .menu--level-2 {
+
+    .menu__item {
         display: block;
+        width: 100%;
+        text-align: center;
+        padding: 10px 0;
+    }
+
+    .menu__item--has-children {
+        position: relative;
+    }
+
+    .menu--level-2 {
+        display: none;
+        position: absolute;
+        background-color: white; /* Adjust to match theme */
+        width: 100%;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+        text-align: center;
+    }
+
+    .menu__item--has-children.active .menu--level-2 {
+        display: block;
+    }
+
+    /* Ensure dropdown arrow is visible */
+    .menu__item--has-children > a::after {
+        content: " ▼";
+        font-size: 12px;
+        margin-left: 5px;
     }
 }
