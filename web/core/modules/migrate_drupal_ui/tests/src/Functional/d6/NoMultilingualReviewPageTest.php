@@ -97,7 +97,6 @@ class NoMultilingualReviewPageTest extends NoMultilingualReviewPageTestBase {
       'Node',
       'Nodeaccess',
       'Node Reference',
-      'Node Reference URL Widget',
       'Number',
       'OpenID',
       'PHP filter',

@@ -31,10 +31,10 @@
 
   &.is-active {
     visibility: visible;
-    transform: translateX(calc(-100% - var(--drupal-displace-offset-right, 0px))); /* LTR */
+    transform: translateX(-100%); /* LTR */
 
     &:dir(rtl) {
-      transform: translateX(calc(100% + var(--drupal-displace-offset-left, 0px)));
+      transform: translateX(100%);
     }
   }
 

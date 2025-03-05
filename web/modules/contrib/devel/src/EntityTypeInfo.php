@@ -7,7 +7,6 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\Core\StringTranslation\TranslationInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -22,32 +21,27 @@ class EntityTypeInfo implements ContainerInjectionInterface {
 
   /**
    * The current user.
+   *
+   * @var \Drupal\Core\Session\AccountInterface
    */
-  protected AccountInterface $currentUser;
+  protected $currentUser;
 
   /**
    * EntityTypeInfo constructor.
    *
    * @param \Drupal\Core\Session\AccountInterface $current_user
    *   Current user.
-   * @param \Drupal\Core\StringTranslation\TranslationInterface $string_translation
-   *   The translation manager.
    */
-  public function __construct(
-    AccountInterface $current_user,
-    TranslationInterface $string_translation
-  ) {
+  public function __construct(AccountInterface $current_user) {
     $this->currentUser = $current_user;
-    $this->stringTranslation = $string_translation;
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container): static {
+  public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('current_user'),
-      $container->get('string_translation'),
+      $container->get('current_user')
     );
   }
 
@@ -61,27 +55,21 @@ class EntityTypeInfo implements ContainerInjectionInterface {
    *
    * @see hook_entity_type_alter()
    */
-  public function entityTypeAlter(array &$entity_types): void {
-    foreach ($entity_types as $entity_type_id => $entity_type) {
-      // Make devel-load and devel-load-with-references subtasks. The edit-form
-      // template is used to extract and set additional parameters dynamically.
-      // If there is no 'edit-form' template then still create the link using
-      // 'entity_type_id/{entity_type_id}' as the link. This allows devel info
-      // to be viewed for any entity, even if the url has to be typed manually.
-      // @see https://gitlab.com/drupalspoons/devel/-/issues/377
-      $entity_link = $entity_type->getLinkTemplate('edit-form') ?: $entity_type_id . "/{{$entity_type_id}}";
-      $this->setEntityTypeLinkTemplate($entity_type, $entity_link, 'devel-load', "/devel/$entity_type_id");
-      $this->setEntityTypeLinkTemplate($entity_type, $entity_link, 'devel-load-with-references', "/devel/load-with-references/$entity_type_id");
+  public function entityTypeAlter(array &$entity_types) {
 
-      // Create the devel-render subtask.
+    foreach ($entity_types as $entity_type_id => $entity_type) {
+      if (($entity_type->getFormClass('default') || $entity_type->getFormClass('edit')) && $entity_type->hasLinkTemplate('edit-form')) {
+        // We use edit-form template to extract and set additional parameters
+        // dynamically.
+        $entity_link = $entity_type->getLinkTemplate('edit-form');
+        $this->setEntityTypeLinkTemplate($entity_type, $entity_link, 'devel-load', "/devel/$entity_type_id", $entity_link);
+      }
       if ($entity_type->hasViewBuilderClass() && $entity_type->hasLinkTemplate('canonical')) {
         // We use canonical template to extract and set additional parameters
         // dynamically.
         $entity_link = $entity_type->getLinkTemplate('canonical');
-        $this->setEntityTypeLinkTemplate($entity_type, $entity_link, 'devel-render', "/devel/render/$entity_type_id");
+        $this->setEntityTypeLinkTemplate($entity_type, $entity_link, 'devel-render', "/devel/render/$entity_type_id", 'canonical');
       }
-
-      // Create the devel-definition subtask.
       if ($entity_type->hasLinkTemplate('devel-render') || $entity_type->hasLinkTemplate('devel-load')) {
         // We use canonical or edit-form template to extract and set additional
         // parameters dynamically.
@@ -107,7 +95,7 @@ class EntityTypeInfo implements ContainerInjectionInterface {
    * @param string $base_path
    *   Base path for devel link key.
    */
-  protected function setEntityTypeLinkTemplate(EntityTypeInterface $entity_type, $entity_link, $devel_link_key, string $base_path) {
+  protected function setEntityTypeLinkTemplate(EntityTypeInterface $entity_type, $entity_link, $devel_link_key, $base_path) {
     // Extract all route parameters from the given template and set them to
     // the current template.
     // Some entity templates can contain not only entity id,
@@ -128,7 +116,7 @@ class EntityTypeInfo implements ContainerInjectionInterface {
    * @return string
    *   Path parts.
    */
-  protected function getPathParts($entity_path): string {
+  protected function getPathParts($entity_path) {
     $path = '';
     if (preg_match_all('/{\w*}/', $entity_path, $matches)) {
       foreach ($matches[0] as $match) {
@@ -149,7 +137,7 @@ class EntityTypeInfo implements ContainerInjectionInterface {
    *
    * @see hook_entity_operation()
    */
-  public function entityOperation(EntityInterface $entity): array {
+  public function entityOperation(EntityInterface $entity) {
     $operations = [];
     if ($this->currentUser->hasPermission('access devel information')) {
       if ($entity->hasLinkTemplate('devel-load')) {

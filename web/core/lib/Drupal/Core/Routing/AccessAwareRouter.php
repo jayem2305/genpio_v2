@@ -65,9 +65,6 @@ class AccessAwareRouter implements AccessAwareRouterInterface {
 
   /**
    * {@inheritdoc}
-   *
-   * phpcs:ignore Drupal.Commenting.FunctionComment.VoidReturn
-   * @return void
    */
   public function setContext(SymfonyRequestContext $context) {
     $this->router->setContext($context);

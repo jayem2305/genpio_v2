@@ -12,10 +12,10 @@ use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 class RegisterSerializationClassesCompilerPass implements CompilerPassInterface {
 
   /**
-   * {@inheritdoc}
+   * Adds services to the Serializer.
    *
-   * phpcs:ignore Drupal.Commenting.FunctionComment.VoidReturn
-   * @return void
+   * @param \Symfony\Component\DependencyInjection\ContainerBuilder $container
+   *   The container to process.
    */
   public function process(ContainerBuilder $container) {
     $definition = $container->getDefinition('serializer');

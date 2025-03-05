@@ -878,10 +878,7 @@ class Select extends Query implements SelectInterface {
 
     // GROUP BY
     if ($this->group) {
-      $group_by_fields = array_map(function (string $field): string {
-        return $this->connection->escapeField($field);
-      }, $this->group);
-      $query .= "\nGROUP BY " . implode(', ', $group_by_fields);
+      $query .= "\nGROUP BY " . implode(', ', $this->group);
     }
 
     // HAVING

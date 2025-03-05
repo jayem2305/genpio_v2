@@ -3,7 +3,6 @@
 namespace Drupal\Tests\devel\Functional;
 
 use Drupal\Core\Url;
-use Drupal\devel\Routing\RouteSubscriber;
 
 /**
  * Tests container info pages and links.
@@ -27,7 +26,7 @@ class DevelContainerInfoTest extends DevelBrowserTestBase {
   /**
    * Tests container info menu link.
    */
-  public function testContainerInfoMenuLink(): void {
+  public function testContainerInfoMenuLink() {
     $this->drupalPlaceBlock('system_menu_block:devel');
     // Ensures that the events info link is present on the devel menu and that
     // it points to the correct page.
@@ -41,7 +40,7 @@ class DevelContainerInfoTest extends DevelBrowserTestBase {
   /**
    * Tests service list page.
    */
-  public function testServiceList(): void {
+  public function testServiceList() {
     $this->drupalGet('/devel/container/service');
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->pageTextContains('Container services');
@@ -59,10 +58,12 @@ class DevelContainerInfoTest extends DevelBrowserTestBase {
     $this->assertEquals(4, count($headers));
 
     $expected_headers = ['ID', 'Class', 'Alias', 'Operations'];
-    $actual_headers = array_map(fn($element) => $element->getText(), $headers);
+    $actual_headers = array_map(function ($element) {
+      return $element->getText();
+    }, $headers);
     $this->assertSame($expected_headers, $actual_headers);
 
-    // Ensures that all the services are listed in the table.
+    // Ensures that all the serivices are listed in the table.
     $cached_definition = \Drupal::service('kernel')->getCachedContainerDefinition();
     $this->assertNotNull($cached_definition);
     $rows = $table->findAll('css', 'tbody tr');
@@ -70,19 +71,18 @@ class DevelContainerInfoTest extends DevelBrowserTestBase {
 
     // Tests the presence of some (arbitrarily chosen) services in the table.
     $expected_services = [
-// Alias changed in Drupal 10 so commented out the test for now.
-//      'config.factory' => [
-//        'class' => 'Drupal\Core\Config\ConfigFactory',
-//        'alias' => '',
-//      ],
-      'devel.route_subscriber' => [
-        'class' => RouteSubscriber::class,
+      'config.factory' => [
+        'class' => 'Drupal\Core\Config\ConfigFactory',
         'alias' => '',
       ],
-//      'plugin.manager.element_info' => [
-//        'class' => 'Drupal\Core\Render\ElementInfoManager',
-//        'alias' => 'element_info',
-//      ],
+      'devel.route_subscriber' => [
+        'class' => 'Drupal\devel\Routing\RouteSubscriber',
+        'alias' => '',
+      ],
+      'plugin.manager.element_info' => [
+        'class' => 'Drupal\Core\Render\ElementInfoManager',
+        'alias' => 'element_info',
+      ],
     ];
 
     foreach ($expected_services as $service_id => $expected) {
@@ -121,7 +121,7 @@ class DevelContainerInfoTest extends DevelBrowserTestBase {
   /**
    * Tests service detail page.
    */
-  public function testServiceDetail(): void {
+  public function testServiceDetail() {
     $service_id = 'devel.dumper';
 
     // Ensures that the page works as expected.
@@ -144,7 +144,7 @@ class DevelContainerInfoTest extends DevelBrowserTestBase {
   /**
    * Tests parameter list page.
    */
-  public function testParameterList(): void {
+  public function testParameterList() {
     // Ensures that the page works as expected.
     $this->drupalGet('/devel/container/parameter');
     $this->assertSession()->statusCodeEquals(200);
@@ -163,7 +163,9 @@ class DevelContainerInfoTest extends DevelBrowserTestBase {
     $this->assertEquals(2, count($headers));
 
     $expected_headers = ['Name', 'Operations'];
-    $actual_headers = array_map(fn($element) => $element->getText(), $headers);
+    $actual_headers = array_map(function ($element) {
+      return $element->getText();
+    }, $headers);
     $this->assertSame($expected_headers, $actual_headers);
 
     // Ensures that all the parameters are listed in the table.
@@ -208,7 +210,7 @@ class DevelContainerInfoTest extends DevelBrowserTestBase {
   /**
    * Tests parameter detail page.
    */
-  public function testParameterDetail(): void {
+  public function testParameterDetail() {
     $parameter_name = 'cache_bins';
 
     // Ensures that the page works as expected.
