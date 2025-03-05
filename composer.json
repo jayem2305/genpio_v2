@@ -29,6 +29,7 @@
         "drupal/views_slideshow": "^5.0",
         "drush/drush": "^12.5",
         "symfony/translation": "^6.4"
+        "drupal/webform": "^6.2",
     },
     "conflict": {
         "drupal/drupal": "*"
