@@ -8,7 +8,9 @@ global-styling:
       css/navbar_custom.css: {}
       css/footer_custom.css: {}
       css/slider_custom.css: {}
-
+      css/event_news_style.css: {}
+      https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css:
+        {}
   js:
     https://www.googletagmanager.com/gtag/js?id=G-XKXXKF1PS2: {}
     assets/third_party/bootstrap/js/bootstrap.bundle.js: {}

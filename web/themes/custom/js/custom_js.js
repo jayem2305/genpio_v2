@@ -71,12 +71,46 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 });
-document.addEventListener("DOMContentLoaded", function() {
-    let eventList = document.querySelector(".views-view-grid"); // Adjust selector if needed
+document.addEventListener("DOMContentLoaded", function () {
+    let eventList = document.querySelector(".event-list.contextual-region"); // Corrected selector
 
     if (eventList) {
-        eventList.classList.add("second-section");
+        eventList.classList.add("second-section"); // Adds the new class
     }
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+    let titleFields = document.querySelectorAll(".views-field.views-field-title-1"); // Select all matching elements
 
+    titleFields.forEach(function (element) {
+        element.classList.add("card-title"); // Add the class to each matched element
+    });
+});
+(function ($, Drupal) {
+    Drupal.behaviors.addUnderlineClass = {
+        attach: function (context, settings) {
+            $("h3", context).each(function () {
+                var $this = $(this);
+                var text = $this.text().trim();
+
+                if (text.includes("Event") || text.includes("News")) {
+                    $this.addClass("underline");
+                    var targetUrl = text.includes("Event") ? "/event" : "/news";
+
+                    // Add "View More" button if it doesn't exist
+                    if (!$this.next(".see-more-wrapper").length) {
+                        $this.after('<div class="see-more-wrapper"><a href="' + targetUrl + '" class="see-more-btn">SEE MORE ' + text.toUpperCase() + ' <span>➜</span></a></div>');
+                    }
+
+                    // Prepend "Latest" if not already there
+                    if (!text.startsWith("Latest")) {
+                        $this.text("Latest " + text);
+                    }
+                }
+            });
+        }
+    };
+})(jQuery, Drupal);
+
+  
+  
