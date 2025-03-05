@@ -19,7 +19,7 @@ interface DevelDumperManagerInterface {
    * @param string $plugin_id
    *   (optional) The plugin ID, defaults to NULL.
    */
-  public function dump(mixed $input, $name = NULL, $plugin_id = NULL);
+  public function dump($input, $name = NULL, $plugin_id = NULL);
 
   /**
    * Returns a string representation of a variable.
@@ -27,16 +27,14 @@ interface DevelDumperManagerInterface {
    * @param mixed $input
    *   The variable to dump.
    * @param string $name
-   *   (optional) The label to output before variable.
+   *   (optional) The label to output before variable, defaults to NULL.
    * @param string $plugin_id
    *   (optional) The plugin ID, defaults to NULL.
-   * @param bool $load_references
-   *   If the input is an entity, load the referenced entities.
    *
    * @return string
    *   String representation of a variable.
    */
-  public function export(mixed $input, $name = NULL, $plugin_id = NULL, $load_references = FALSE);
+  public function export($input, $name = NULL, $plugin_id = NULL);
 
   /**
    * Sets a message with a string representation of a variable.
@@ -44,15 +42,13 @@ interface DevelDumperManagerInterface {
    * @param mixed $input
    *   The variable to dump.
    * @param string $name
-   *   The label to output before variable.
+   *   (optional) The label to output before variable, defaults to NULL.
    * @param string $type
-   *   The message's type.
+   *   (optional) The message's type. Defaults to 'status'.
    * @param string $plugin_id
-   *   The plugin ID.
-   * @param bool $load_references
-   *   If the input is an entity, load the referenced entities.
+   *   (optional) The plugin ID, defaults to NULL.
    */
-  public function message(mixed $input, $name = NULL, $type = 'status', $plugin_id = NULL, $load_references = FALSE);
+  public function message($input, $name = NULL, $type = 'status', $plugin_id = NULL);
 
   /**
    * Logs a variable to a drupal_debug.txt in the site's temp directory.
@@ -70,7 +66,7 @@ interface DevelDumperManagerInterface {
    * @see dd()
    * @see http://drupal.org/node/314112
    */
-  public function debug(mixed $input, $name = NULL, $plugin_id = NULL);
+  public function debug($input, $name = NULL, $plugin_id = NULL);
 
   /**
    * Wrapper for ::dump() and ::export().
@@ -88,7 +84,7 @@ interface DevelDumperManagerInterface {
    *   String representation of a variable if $export is set to TRUE,
    *   NULL otherwise.
    */
-  public function dumpOrExport(mixed $input, $name = NULL, $export = TRUE, $plugin_id = NULL);
+  public function dumpOrExport($input, $name = NULL, $export = TRUE, $plugin_id = NULL);
 
   /**
    * Returns a render array representation of a variable.
@@ -96,15 +92,13 @@ interface DevelDumperManagerInterface {
    * @param mixed $input
    *   The variable to export.
    * @param string $name
-   *   The label to output before variable.
+   *   (optional) The label to output before variable, defaults to NULL.
    * @param string $plugin_id
-   *   The plugin ID.
-   * @param bool $load_references
-   *   If the input is an entity, also load the referenced entities.
+   *   (optional) The plugin ID, defaults to NULL.
    *
    * @return array
    *   String representation of a variable wrapped in a render array.
    */
-  public function exportAsRenderable(mixed $input, $name = NULL, $plugin_id = NULL, $load_references = FALSE): array;
+  public function exportAsRenderable($input, $name = NULL, $plugin_id = NULL);
 
 }

@@ -971,13 +971,7 @@
     this.progress.element = $(
       Drupal.theme('ajaxProgressThrobber', this.progress.message),
     );
-    if ($(this.element).closest('[data-drupal-ajax-container]').length) {
-      $(this.element)
-        .closest('[data-drupal-ajax-container]')
-        .after(this.progress.element);
-    } else {
-      $(this.element).after(this.progress.element);
-    }
+    $(this.element).after(this.progress.element);
   };
 
   /**

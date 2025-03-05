@@ -391,8 +391,7 @@
   background-color: var(--color-gray-050-o-40);
 }
 
-/* @see Drupal.behaviors.verticalTabs */
-@media screen and (min-width: 641px) {
+@media screen and (min-width: 48em) {
   .claro-details__wrapper {
     margin: var(--space-l) var(--details-desktop-wrapper-padding-start);
   }
@@ -402,7 +401,9 @@
   .claro-details__wrapper--vertical-tabs-item {
     margin: 0;
   }
+}
 
+@media screen and (min-width: 85em) {
   .js .claro-details__wrapper--vertical-tabs-item {
     margin: 0;
     border-top: 0;

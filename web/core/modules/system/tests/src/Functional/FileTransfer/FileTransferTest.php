@@ -7,7 +7,8 @@ use Drupal\Core\StreamWrapper\PublicStream;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Tests recursive file copy operations with the file transfer jail.
+ * Tests that the jail is respected and that protocols using recursive file move
+ * operations work.
  *
  * @group FileTransfer
  */
@@ -52,7 +53,7 @@ class FileTransferTest extends BrowserTestBase {
       $output = [];
       exec('rm -Rf ' . escapeshellarg($location), $output, $ret);
       if ($ret != 0) {
-        throw new \Exception('Error removing fake module directory.');
+        throw new Exception('Error removing fake module directory.');
       }
     }
 

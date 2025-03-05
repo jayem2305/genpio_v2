@@ -1,21 +1,13 @@
 include:
-  # This include centralizes our CI "golden path" https://docs.gitlab.com/ee/ci/yaml/#includefile
-  - remote: https://git.drupalcode.org/project/gitlab_templates/-/raw/default-ref/includes/include.drupalci.main.yml
-  - remote: https://git.drupalcode.org/project/gitlab_templates/-/raw/default-ref/includes/include.drupalci.variables.yml
-  - remote: https://git.drupalcode.org/project/gitlab_templates/-/raw/default-ref/includes/include.drupalci.workflows.yml
+  # This remote project centralize our CI "golden path" https://docs.gitlab.com/ee/ci/yaml/#includefile
+  remote: 'https://gitlab.com/drupalspoons/composer-plugin/-/raw/master/templates/.gitlab-ci.yml'
 
-# Start custom overrides.
+#
+# Projects may override anything in the template above.
+# The code below is specific to devel project. Comment it out or delete it when
+# copying this file to your new project.
+#
 
-variables:
-  SKIP_CSPELL: 1
-  # Show more log output
-  _PHPUNIT_EXTRA: --verbose
-  # Convenient, and we have no secrets.
-  _SHOW_ENVIRONMENT_VARIABLES: 1
-
+# Set allow_failure to false so that the test fails for coding standards faults.
 phpcs:
-  allow_failure: false
-eslint:
-  allow_failure: false
-stylelint:
   allow_failure: false

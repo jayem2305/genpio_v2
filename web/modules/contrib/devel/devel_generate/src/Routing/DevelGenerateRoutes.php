@@ -2,9 +2,8 @@
 
 namespace Drupal\devel_generate\Routing;
 
-use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
-use Drupal\devel_generate\Form\DevelGenerateForm;
+use Drupal\Component\Plugin\PluginManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Routing\Route;
 
@@ -14,24 +13,19 @@ use Symfony\Component\Routing\Route;
 class DevelGenerateRoutes implements ContainerInjectionInterface {
 
   /**
-   * The manager to be used for instantiating plugins.
-   */
-  protected PluginManagerInterface $develGenerateManager;
-
-  /**
    * Constructs a new devel_generate route subscriber.
    *
    * @param \Drupal\Component\Plugin\PluginManagerInterface $devel_generate_manager
    *   The DevelGeneratePluginManager.
    */
   public function __construct(PluginManagerInterface $devel_generate_manager) {
-    $this->develGenerateManager = $devel_generate_manager;
+    $this->DevelGenerateManager = $devel_generate_manager;
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container): static {
+  public static function create(ContainerInterface $container) {
     return new static(
       $container->get('plugin.manager.develgenerate')
     );
@@ -40,8 +34,8 @@ class DevelGenerateRoutes implements ContainerInjectionInterface {
   /**
    * Define routes for all devel_generate plugins.
    */
-  public function routes(): array {
-    $devel_generate_plugins = $this->develGenerateManager->getDefinitions();
+  public function routes() {
+    $devel_generate_plugins = $this->DevelGenerateManager->getDefinitions();
 
     $routes = [];
     foreach ($devel_generate_plugins as $id => $plugin) {
@@ -50,7 +44,7 @@ class DevelGenerateRoutes implements ContainerInjectionInterface {
       $routes["devel_generate.$id"] = new Route(
         "admin/config/development/generate/$type_url_str",
         [
-          '_form' => DevelGenerateForm::class,
+          '_form' => '\Drupal\devel_generate\Form\DevelGenerateForm',
           '_title' => "Generate $label",
           '_plugin_id' => $id,
         ],

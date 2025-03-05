@@ -825,3 +825,4 @@ $databases['default']['default'] = array (
   'autoload' => 'core/modules/mysql/src/Driver/Database/mysql/',
 );
 $settings['config_sync_directory'] = 'sites/default/files/config_ioZkT0ZMkf1_lFDOd3_98mFmxh5xvTXEpuhrbXeXea_xe-jkWL83zWmTz8sEiYBu2FidX4sHfg/sync';
+$config['system.logging']['error_level'] = 'verbose';

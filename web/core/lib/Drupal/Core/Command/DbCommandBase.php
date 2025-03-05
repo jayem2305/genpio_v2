@@ -14,9 +14,6 @@ class DbCommandBase extends Command {
 
   /**
    * {@inheritdoc}
-   *
-   * phpcs:ignore Drupal.Commenting.FunctionComment.VoidReturn
-   * @return void
    */
   protected function configure() {
     $this->addOption('database', NULL, InputOption::VALUE_OPTIONAL, 'The database connection name to use.', 'default')

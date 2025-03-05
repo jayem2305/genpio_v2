@@ -21,8 +21,10 @@ class DevelLocalTask extends DeriverBase implements ContainerDeriverInterface {
 
   /**
    * The entity manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected EntityTypeManagerInterface $entityTypeManager;
+  protected $entityTypeManager;
 
   /**
    * Creates an DevelLocalTask object.
@@ -40,10 +42,10 @@ class DevelLocalTask extends DeriverBase implements ContainerDeriverInterface {
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, $base_plugin_id): static {
+  public static function create(ContainerInterface $container, $base_plugin_id) {
     return new static(
       $container->get('entity_type.manager'),
-      $container->get('string_translation'),
+      $container->get('string_translation')
     );
   }
 
@@ -55,7 +57,7 @@ class DevelLocalTask extends DeriverBase implements ContainerDeriverInterface {
 
     foreach ($this->entityTypeManager->getDefinitions() as $entity_type_id => $entity_type) {
 
-      $has_edit_path = $entity_type->hasLinkTemplate('edit-form');
+      $has_edit_path = $entity_type->hasLinkTemplate('devel-load');
       $has_canonical_path = $entity_type->hasLinkTemplate('devel-render');
 
       if ($has_edit_path || $has_canonical_path) {
@@ -88,12 +90,6 @@ class DevelLocalTask extends DeriverBase implements ContainerDeriverInterface {
             'route_name' => "entity.$entity_type_id.devel_load",
             'weight' => 100,
             'title' => $this->t('Load'),
-            'parent_id' => "devel.entities:$entity_type_id.devel_tab",
-          ];
-          $this->derivatives["$entity_type_id.devel_load_with_references_tab"] = [
-            'route_name' => "entity.$entity_type_id.devel_load_with_references",
-            'weight' => 100,
-            'title' => $this->t('Load (with references)'),
             'parent_id' => "devel.entities:$entity_type_id.devel_tab",
           ];
         }

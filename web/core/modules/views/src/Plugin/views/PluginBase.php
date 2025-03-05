@@ -87,7 +87,7 @@ abstract class PluginBase extends ComponentPluginBase implements ContainerFactor
   public $displayHandler;
 
   /**
-   * Plugins' definition.
+   * Plugins's definition.
    *
    * @var array
    */
@@ -340,9 +340,8 @@ abstract class PluginBase extends ComponentPluginBase implements ContainerFactor
   }
 
   /**
-   * Replaces Views' tokens in a given string.
-   *
-   * The resulting string will be sanitized with Xss::filterAdmin.
+   * Replaces Views' tokens in a given string. The resulting string will be
+   * sanitized with Xss::filterAdmin.
    *
    * @param $text
    *   Unsanitized string with possible tokens.
