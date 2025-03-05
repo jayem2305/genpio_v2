@@ -6,7 +6,6 @@ base theme: olivero
 
 libraries:
   - piotheme/global-styling
-  - piotheme/footer_styles
 
 
 regions:
